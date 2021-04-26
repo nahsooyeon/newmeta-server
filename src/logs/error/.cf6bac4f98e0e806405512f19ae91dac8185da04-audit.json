@@ -1,0 +1,29 @@
+{
+    "keep": {
+        "days": false,
+        "amount": 30
+    },
+    "auditLog": "/Users/nahsooyeon/Desktop/new-meta-server/src/logs/error/.cf6bac4f98e0e806405512f19ae91dac8185da04-audit.json",
+    "files": [
+        {
+            "date": 1619187293417,
+            "name": "/Users/nahsooyeon/Desktop/new-meta-server/src/logs/error/2021-04-23.error.log",
+            "hash": "77bd35e2128b8ad8af20d811c897b8dd"
+        },
+        {
+            "date": 1619201688842,
+            "name": "/Users/nahsooyeon/Desktop/new-meta-server/src/logs/error/2021-04-24.error.log",
+            "hash": "9d3cfad5048b443e00ea6413b03d222c"
+        },
+        {
+            "date": 1619331375411,
+            "name": "/Users/nahsooyeon/Desktop/new-meta-server/src/logs/error/2021-04-25.error.log",
+            "hash": "31152d0b4191462f9fe90b286956a4aa"
+        },
+        {
+            "date": 1619368197827,
+            "name": "/Users/nahsooyeon/Desktop/new-meta-server/src/logs/error/2021-04-26.error.log",
+            "hash": "740a470bc3cb2fd254e67c65cb34ca4f"
+        }
+    ]
+}
