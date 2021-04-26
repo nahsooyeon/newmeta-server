@@ -4,22 +4,21 @@ import fs from "fs";
 import "reflect-metadata";
 import { ApolloServer } from "apollo-server-express";
 import express from "express";
-import { buildSchema } from "type-graphql";
 import { createConnection } from "typeorm";
-import cors from "cors";
-import { logger } from "./config/winston";
+import { buildSchema } from "type-graphql";
 import "dotenv/config";
+import cors from "cors";
+import morgan from "morgan";
+
+import { logger } from "./config/winston";
+import passport from "./lib/passport";
 
 import routes from "./routes";
-// import {
-// 	githubCallback,
-// 	googleCallback,
-// 	facebookCallback,
-// } from "./controllers/callback";
 
 const main = async () => {
 	const app = express();
 
+	// Database와 연결
 	if (process.env.NODE_ENV === "development") {
 		await createConnection({
 			type: "mysql",
@@ -46,18 +45,18 @@ const main = async () => {
 		});
 	}
 
+	// 각종 미들웨어
+	morgan.token("graphql-query", (req: any) => {
+		const { query, variables, operationName } = req.body;
+		return `GRAPHQL: \nOperation Name: ${operationName} \nQuery: ${query} \nVariables: ${JSON.stringify(
+			variables
+		)}`;
+	});
+	app.use(morgan(":graphql-query")); // GraphQL용 로거
+	app.use(morgan("common")); // RESTful API용 로거
 	app.use(express.json());
 	app.use(express.urlencoded({ extended: false }));
-
-	const schema = await buildSchema({
-		resolvers: [__dirname + "/resolvers/*.ts"],
-	});
-
-	const apolloServer = new ApolloServer({
-		schema,
-		context: ({ req, res }: any) => ({ req, res }),
-	});
-
+	app.use(passport.initialize());
 	app.use(
 		cors({
 			credentials: true,
@@ -66,26 +65,24 @@ const main = async () => {
 		})
 	);
 
-	// winston testing
-	app.get("/", (req, res) => {
-		logger.info("GET /");
-		res.send("testing...");
-	});
-	app.get("/error", (req, res) => {
-		logger.error("Error message");
-		res.sendStatus(500);
+	// 스키마 설정
+	const schema = await buildSchema({
+		resolvers: [__dirname + "/resolvers/*.ts"],
 	});
 
-	// oAuth
-	// app.post("/auth/github/callback", githubCallback);
-	// app.post("/auth/google/callback", googleCallback);
-	// app.post("/auth/facebook/callback", facebookCallback);
+	// 아폴로 서버 구동
+	const apolloServer = new ApolloServer({
+		schema,
+		context: ({ req, res }: any) => ({ req, res }),
+	});
 
+	// 라우트
 	app.use("/", routes);
 
+	// 아폴로서버 미들웨어
 	apolloServer.applyMiddleware({ app });
 
-	// apolloServer.start();
+	// 서버 구동
 	const PORT = 4000;
 	let server;
 	if (
@@ -103,17 +100,13 @@ const main = async () => {
 
 		const credentials = { key: privateKey, cert: certificate };
 		server = https.createServer(credentials, app);
-		server.listen(
-			PORT,
-			() => logger.info(`🚀 HTTPS Server is starting on ${PORT}`)
-			// console.log(`🚀 HTTPS Server is starting on ${PORT}`)
+		server.listen(PORT, () =>
+			logger.info(`🚀 HTTPS Server is starting on ${PORT}`)
 		);
 	} else {
 		server = app.listen(PORT);
-		console.log(`🚀 HTTP Server is starting on ${PORT}/graphql`);
+		console.log(`🚀 HTTP Server is starting on ${PORT}`);
 	}
-
-	// app.listen(PORT, () => console.log(`Server is up on port ${PORT}/graphql`));
 };
 
 main();
